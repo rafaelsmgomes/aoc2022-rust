@@ -1,4 +1,5 @@
-use core::fmt;
+// TODO: take this back up from 'Heap allocation hate club'
+use std::fmt::{self};
 
 use itertools::Itertools;
 use nom::{
@@ -17,6 +18,7 @@ impl fmt::Debug for Crate {
         write!(f, "{}", self.0)
     }
 }
+
 impl fmt::Display for Crate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(self, f)
@@ -24,11 +26,13 @@ impl fmt::Display for Crate {
 }
 
 struct Piles(Vec<Vec<Crate>>);
+
 impl fmt::Debug for Piles {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, pile) in self.0.iter().enumerate() {
             writeln!(f, "Pile {}: {:?}", i, pile)?;
         }
+
         Ok(())
     }
 }
@@ -54,7 +58,6 @@ fn parse_crate(i: &str) -> IResult<&str, Crate> {
 }
 
 fn parse_hole(i: &str) -> IResult<&str, ()> {
-    // 'drop' takes a value and returns nothing, which is perfect for our case
     map(tag("   "), drop)(i)
 }
 
@@ -74,7 +77,14 @@ fn parse_crate_line(i: &str) -> IResult<&str, Vec<Option<Crate>>> {
         }
         i = next_i
     }
+
     Ok((i, v))
+}
+
+fn parse_number(i: &str) -> IResult<&str, usize> {
+    map_res(take_while1(|c: char| c.is_ascii_digit()), |s: &str| {
+        s.parse::<usize>()
+    })(i)
 }
 
 fn transpose_rev<T>(v: Vec<Vec<Option<T>>>) -> Vec<Vec<T>> {
@@ -90,12 +100,6 @@ fn transpose_rev<T>(v: Vec<Vec<Option<T>>>) -> Vec<Vec<T>> {
                 .collect::<Vec<T>>()
         })
         .collect()
-}
-
-fn parse_number(i: &str) -> IResult<&str, usize> {
-    map_res(take_while1(|c: char| c.is_ascii_digit()), |s: &str| {
-        s.parse::<usize>()
-    })(i)
 }
 
 fn parse_pile_number(i: &str) -> IResult<&str, usize> {
@@ -135,16 +139,14 @@ fn main() {
     let mut piles = Piles(transpose_rev(crate_lines));
     println!("{piles:?}");
 
-    // we've consumed the "numbers line" but not the separating line
     assert!(lines.next().unwrap().is_empty());
 
     for ins in lines.map(|line| all_consuming(parse_instruction)(line).finish().unwrap().1) {
-        println!("{ins:?}");
         piles.apply(ins);
-        println!("{piles:?}");
     }
+
     println!(
         "answer = {}",
         piles.0.iter().map(|pile| pile.last().unwrap()).join("")
-    );
+    )
 }

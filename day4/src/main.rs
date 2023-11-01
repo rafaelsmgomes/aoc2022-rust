@@ -10,8 +10,7 @@ trait InclusiveRangeExt {
     }
 
     fn overlaps(&self, other: &Self) -> bool;
-
-    fn overlaps_or_is_overlapped(&self, other: &Self) -> bool {
+    fn overlaps_or_is_overlaped(&self, other: &Self) -> bool {
         self.overlaps(other) || other.overlaps(self)
     }
 }
@@ -30,7 +29,7 @@ where
 }
 
 fn main() {
-    let redundant = include_str!("input.txt")
+    let overlapping = include_str!("input.txt")
         .lines()
         .map(|l| {
             l.split(',')
@@ -45,7 +44,8 @@ fn main() {
                 .collect_tuple::<(_, _)>()
                 .expect("each line must have a pair of ranges")
         })
-        .filter(|(a, b)| a.overlaps_or_is_overlapped(b))
+        .filter(|(a, b)| a.overlaps_or_is_overlaped(b))
         .count();
-    dbg!(redundant);
+
+    dbg!(overlapping);
 }
