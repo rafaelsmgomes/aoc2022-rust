@@ -37,33 +37,26 @@ mod item {
 use std::collections::HashSet;
 
 use item::Item;
+use itertools::Itertools;
 
 fn main() -> color_eyre::Result<()> {
-    let sum = include_str!("../sample_input.txt")
-        .lines()
-        .map(|line| -> color_eyre::Result<_> {
-            let (first, second) = line.split_at(line.len() / 2);
-            let first_items = first
-                .bytes()
-                .map(Item::try_from)
-                .collect::<Result<HashSet<_>, _>>()?;
+    let rucksacks = include_str!("../sample_input.txt").lines().map(|line| {
+        line.bytes()
+            .map(Item::try_from)
+            .collect::<Result<HashSet<_>, _>>()
+    });
 
-            itertools::process_results(second.bytes().map(Item::try_from), |mut it| {
-                it.find(|&item| first_items.contains(&item))
-                    .map(|item| item.score())
-                    .ok_or_else(|| color_eyre::eyre::eyre!("compartments have no items in common"))
-            })?
-        })
-        .sum::<color_eyre::Result<usize>>()?;
-
+    let sum = itertools::process_results(rucksacks, |rs| {
+        rs.tuples()
+            .map(|(a, b, c)| {
+                a.iter()
+                    .copied()
+                    .find(|i| b.contains(i) && c.contains(i))
+                    .map(|i| dbg!(i.score()))
+                    .unwrap_or_default()
+            })
+            .sum::<usize>();
+    })?;
     dbg!(sum);
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        // assert!(1 == 1);
-    }
 }
